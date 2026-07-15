@@ -1,0 +1,129 @@
+services:
+  - type: web
+    name: verbo-api-hml
+    runtime: docker
+    plan: free
+    region: virginia
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/ready
+    maxShutdownDelaySeconds: 30
+    autoDeployTrigger: checksPass
+    buildFilter:
+      paths:
+        - backend/**
+        - render.yaml
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: verbo-db-hml
+          property: connectionString
+      - key: NODE_ENV
+        value: production
+      - key: FRONTEND_URL
+        value: https://verbo-web-hml.onrender.com
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: APP_TIME_ZONE
+        value: America/Sao_Paulo
+      - key: AI_PROVIDER
+        sync: false
+      - key: AI_FALLBACK_TO_LOCAL
+        value: "false"
+      - key: AI_TIMEOUT_MS
+        value: "30000"
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ANTHROPIC_MODEL
+        value: claude-sonnet-4-6
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4.1-mini
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash-lite
+      - key: BIBLE_PROVIDER
+        value: api_bible
+      - key: BIBLE_FALLBACK_TO_LOCAL
+        value: "false"
+      - key: BIBLE_API_KEY
+        sync: false
+      - key: BIBLE_API_BASE_URL
+        value: https://rest.api.bible/v1
+      - key: BIBLE_ID_ARC
+        sync: false
+      - key: BIBLE_ID_ARA
+        sync: false
+      - key: BIBLE_ID_NVI
+        sync: false
+      - key: BIBLE_ID_NVT
+        sync: false
+      - key: BIBLE_ID_NTLH
+        sync: false
+      - key: GENERATION_LIMIT_MONTHLY
+        value: "3"
+      - key: PRO_GENERATION_LIMIT
+        value: "300"
+      - key: CHURCH_GENERATION_LIMIT
+        value: "1000"
+      - key: MERCADO_PAGO_ACCESS_TOKEN
+        sync: false
+      - key: MERCADO_PAGO_WEBHOOK_SECRET
+        sync: false
+      - key: PRO_MONTHLY_CENTS
+        value: "2990"
+      - key: PRO_ANNUAL_CENTS
+        value: "25116"
+      - key: CHURCH_MONTHLY_CENTS
+        value: "9990"
+      - key: CHURCH_ANNUAL_CENTS
+        value: "83916"
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+
+  - type: web
+    name: verbo-web-hml
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    autoDeployTrigger: checksPass
+    buildFilter:
+      paths:
+        - frontend/**
+        - render.yaml
+    envVars:
+      - key: NODE_VERSION
+        value: 20.20.2
+      - key: VITE_API_URL
+        value: https://verbo-api-hml.onrender.com/api
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: Permissions-Policy
+        value: camera=(), microphone=(), geolocation=()
+
+
+databases:
+  - name: verbo-db-hml
+    plan: free
+    region: virginia
+    databaseName: verbo_hml
+    user: verbo_hml
+    ipAllowList: []
